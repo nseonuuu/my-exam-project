@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  createdAt    DateTime      @default(now())
+  testRecords  TestRecord[]
+  customExams  CustomExam[]
+}
+
+model Exam {
+  id        Int       @id @default(autoincrement())
+  category  String    // 예: "5급 공채"
+  year      Int
+  subjects  Subject[]
+}
+
+model Subject {
+  id           Int          @id @default(autoincrement())
+  examId       Int
+  name         String       // 예: "언어논리"
+  passingScore Int
+  exam         Exam         @relation(fields: [examId], references: [id])
+  questions    Question[]
+  testRecords  TestRecord[]
+}
+
+model Question {
+  id                Int          @id @default(autoincrement())
+  subjectId         Int
+  questionNumber    Int
+  correctAnswer     Int
+  questionType      String?      // 예: "논리퀴즈"
+  globalCorrectRate Float?       // 전체 정답률
+  subject           Subject      @relation(fields: [subjectId], references: [id])
+  userAnswers       UserAnswer[]
+}
+
+model TestRecord {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  subjectId   Int
+  totalScore  Int
+  createdAt   DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [id])
+  subject     Subject      @relation(fields: [subjectId], references: [id])
+  userAnswers UserAnswer[]
+}
+
+model UserAnswer {
+  id           Int        @id @default(autoincrement())
+  recordId     Int
+  questionId   Int
+  userAnswer   Int?
+  isCorrect    Boolean
+  difficulty   String?    // "상" / "중" / "하"
+  importance   Int?       // 1~3 (별점)
+  memo         String?
+  testRecord   TestRecord @relation(fields: [recordId], references: [id])
+  question     Question   @relation(fields: [questionId], references: [id])
+}
+
+model CustomExam {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  title     String
+  answerKey Json   // 예: [3, 1, 4, 2, ...]
+  user      User   @relation(fields: [userId], references: [id])
+}
