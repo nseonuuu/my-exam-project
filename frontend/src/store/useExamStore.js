@@ -24,11 +24,14 @@ const useExamStore = create((set, get) => ({
 
     const newTab = {
       tabId: `tab_${Date.now()}`,
-      examInfo,                        // { year, subject, booklet }
+      examInfo,                        // { year, subject, booklet, subjectId }
       userAnswers: Array(40).fill(null), // 40문항 빈 배열
       isGraded: false,
       score: null,
       gradeResult: [],                 // 문항별 채점 결과 배열
+      correctAnswers: [],              // 정답 번호 배열 [3, 1, 4, ...]
+      questionData: [],                // 문항 상세 정보 [{id, questionType, globalCorrectRate, ...}]
+      gradeDetails: [],                // 채점 상세 [{answerId, questionId, userAnswer, isCorrect}]
     };
     set((state) => ({
       activeExams: [...state.activeExams, newTab],
@@ -72,11 +75,32 @@ const useExamStore = create((set, get) => ({
 
   // ─── 채점 결과 저장 액션 ───────────────────────
 
-  setGraded: (tabId, score, gradeResult) => {
+  setGraded: (tabId, { score, gradeResult, correctAnswers, questionData, gradeDetails }) => {
     set((state) => ({
       activeExams: state.activeExams.map((exam) =>
         exam.tabId === tabId
-          ? { ...exam, isGraded: true, score, gradeResult }
+          ? { ...exam, isGraded: true, score, gradeResult, correctAnswers, questionData, gradeDetails }
+          : exam
+      ),
+    }));
+  },
+
+  // ─── 다시 채점하기 (답안 + 채점 결과 초기화) ────
+
+  resetGrade: (tabId) => {
+    set((state) => ({
+      activeExams: state.activeExams.map((exam) =>
+        exam.tabId === tabId
+          ? {
+              ...exam,
+              isGraded: false,
+              score: null,
+              gradeResult: [],
+              correctAnswers: [],
+              questionData: [],
+              gradeDetails: [],
+              userAnswers: Array(40).fill(null),
+            }
           : exam
       ),
     }));
