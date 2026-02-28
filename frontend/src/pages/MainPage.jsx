@@ -10,6 +10,7 @@ import { fetchExamList } from '../api/examApi';
 export default function MainPage() {
   const { activeExams, addTab, getCurrentExam } = useExamStore();
   const navigate = useNavigate();
+  const currentExam = getCurrentExam();
 
   // 서버에서 받아온 시험 목록
   const [examList, setExamList] = useState([]);  // Exam[]
@@ -19,6 +20,14 @@ export default function MainPage() {
   const [selectedYear,     setSelectedYear]     = useState('');
   const [selectedSubject,  setSelectedSubject]  = useState('');
   const [selectedBooklet,  setSelectedBooklet]  = useState('');
+
+  // 문항별 상세 분석: 선택된 문항 인덱스 (null = 선택 안함)
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
+
+  // 탭 변경 시 선택된 문항 초기화
+  useEffect(() => {
+    setSelectedQuestionIndex(null);
+  }, [currentExam?.tabId]);
 
   useEffect(() => {
     fetchExamList().then((res) => {
@@ -68,7 +77,7 @@ export default function MainPage() {
     });
   };
 
-  // 연도 변경 시 과목/책형 초기화
+  // 카테고리 변경 시 연도/과목/책형 초기화
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
     const firstEntry = examList.find((e) => e.category === category);
@@ -93,18 +102,13 @@ export default function MainPage() {
     setSelectedBooklet(firstBooklet);
   };
 
+  // 모범답안 클릭 핸들러 (토글)
+  const handleCorrectAnswerClick = (questionIndex) => {
+    setSelectedQuestionIndex((prev) => prev === questionIndex ? null : questionIndex);
+  };
+
   return (
     <div>
-      {/* ── 상단 네비게이션 ── */}
-      <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid #ccc' }}>
-        <strong>📋 기출채점기</strong>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={() => navigate('/mypage')}>마이페이지</button>
-          <button onClick={() => navigate('/wrong-notes')}>오답노트</button>
-          <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}>로그아웃</button>
-        </div>
-      </nav>
-
       {/* ── 탭 네비게이션 ── */}
       <MultiTabBoard onAddTab={handleAddTab} />
 
@@ -153,15 +157,21 @@ export default function MainPage() {
       {/* ── 탭이 있을 때 채점 보드 표시 ── */}
       {activeExams.length > 0 && (
         <>
-          <OmrSheet correctAnswers={null} />
+          <OmrSheet
+            onCorrectAnswerClick={handleCorrectAnswerClick}
+            selectedQuestionIndex={selectedQuestionIndex}
+          />
 
           <div style={{ padding: '12px' }}>
             <ResultSummary passingScore={80} />
           </div>
 
-          <div style={{ padding: '12px' }}>
-            <QuestionDetail questions={[]} />
-          </div>
+          {/* 문항별 상세 분석: 모범답안 클릭 시 해당 문항만 표시 */}
+          {currentExam?.isGraded && selectedQuestionIndex !== null && (
+            <div style={{ padding: '12px' }}>
+              <QuestionDetail selectedQuestionIndex={selectedQuestionIndex} />
+            </div>
+          )}
         </>
       )}
     </div>

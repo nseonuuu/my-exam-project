@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
 import useExamStore from '../../store/useExamStore';
 
-export default function OmrSheet({ correctAnswers }) {
+export default function OmrSheet({ onCorrectAnswerClick, selectedQuestionIndex }) {
   const { getCurrentExam, setAnswer } = useExamStore();
   const currentExam = getCurrentExam();
   const inputRefs = useRef([]);
 
   if (!currentExam) return <p>시험을 선택해주세요.</p>;
 
-  const { tabId, userAnswers, gradeResult, isGraded } = currentExam;
+  const { tabId, userAnswers, gradeResult, isGraded, correctAnswers } = currentExam;
 
   // ── 키보드 입력 지원 ──────────────────────────────
   useEffect(() => {
@@ -32,7 +32,9 @@ export default function OmrSheet({ correctAnswers }) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [tabId]);
+  }, [tabId, isGraded]);
+
+  const answerList = correctAnswers?.length > 0 ? correctAnswers : Array(40).fill(null);
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -73,22 +75,37 @@ export default function OmrSheet({ correctAnswers }) {
             ))}
           </tr>
 
-          {/* 모범 답안 행 */}
+          {/* 모범 답안 행 — 채점 후 클릭 시 문항별 상세 분석 표시 */}
           <tr>
-            <td>모범 답안</td>
-            {(correctAnswers ?? Array(40).fill(null)).map((ans, i) => (
-              <td key={i}>{isGraded ? ans : '-'}</td>
+            <td>모범답안</td>
+            {answerList.map((ans, i) => (
+              <td
+                key={i}
+                onClick={() => isGraded && onCorrectAnswerClick?.(i)}
+                style={{
+                  cursor: isGraded ? 'pointer' : 'default',
+                  background: selectedQuestionIndex === i ? '#fef3c7' : 'transparent',
+                  fontWeight: selectedQuestionIndex === i ? 'bold' : 'normal',
+                  textAlign: 'center',
+                }}
+                title={isGraded ? `${i + 1}번 문항 상세 보기` : ''}
+              >
+                {isGraded ? ans : '-'}
+              </td>
             ))}
           </tr>
 
           {/* 채점 결과 행 */}
           <tr>
             <td>채점 결과</td>
-            {gradeResult.map((result, i) => (
-              <td key={i}>
-                {result === null ? '' : result ? '✅' : '❌'}
-              </td>
-            ))}
+            {Array.from({ length: 40 }, (_, i) => {
+              const result = gradeResult?.[i] ?? null;
+              return (
+                <td key={i}>
+                  {result === null ? '' : result ? '✅' : '❌'}
+                </td>
+              );
+            })}
           </tr>
         </tbody>
       </table>

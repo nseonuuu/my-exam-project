@@ -48,12 +48,24 @@ const gradeExam = async ({ userId, subjectId, userAnswers }) => {
     }))
   });
 
+  // 6. 저장된 UserAnswer를 다시 조회하여 answerId 포함
+  const savedAnswers = await prisma.userAnswer.findMany({
+    where: { recordId: record.id },
+    orderBy: { question: { questionNumber: 'asc' } },
+    select: { id: true, questionId: true, userAnswer: true, isCorrect: true },
+  });
+
   return {
     recordId: record.id,
     totalScore,
     correctCount,
     totalCount: questions.length,
-    details: gradedAnswers,
+    details: savedAnswers.map(a => ({
+      answerId: a.id,
+      questionId: a.questionId,
+      userAnswer: a.userAnswer,
+      isCorrect: a.isCorrect,
+    })),
   };
 };
 
