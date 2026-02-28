@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import useExamStore from '../../store/useExamStore';
 
 export default function OmrSheet({ correctAnswers }) {
   const { getCurrentExam, setAnswer } = useExamStore();
   const currentExam = getCurrentExam();
+  const inputRefs = useRef([]);
 
   if (!currentExam) return <p>시험을 선택해주세요.</p>;
 
@@ -12,11 +13,21 @@ export default function OmrSheet({ correctAnswers }) {
   // ── 키보드 입력 지원 ──────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // 포커스된 셀의 index를 별도 ref로 관리하는 방식 권장
-      // 여기서는 개념만 제시
+      const focused = document.activeElement;
+      const index = inputRefs.current.indexOf(focused);
+      if (index === -1) return;
+
       const num = parseInt(e.key);
       if (num >= 1 && num <= 5) {
-        // 현재 포커스된 문항에 답안 입력
+        setAnswer(tabId, index, num);
+        // 다음 칸으로 자동 이동
+        inputRefs.current[index + 1]?.focus();
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        setAnswer(tabId, index, null);
+      } else if (e.key === 'ArrowRight') {
+        inputRefs.current[index + 1]?.focus();
+      } else if (e.key === 'ArrowLeft') {
+        inputRefs.current[index - 1]?.focus();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -39,12 +50,25 @@ export default function OmrSheet({ correctAnswers }) {
           <tr>
             <td>내 답안</td>
             {userAnswers.map((ans, i) => (
-              <td key={i} onClick={() => {
-                const input = prompt(`${i + 1}번 답안 입력 (1~5)`);
-                const num = parseInt(input);
-                if (num >= 1 && num <= 5) setAnswer(tabId, i, num);
-              }}>
-                {ans ?? ''}
+              <td key={i}>
+                <input
+                  ref={(el) => (inputRefs.current[i] = el)}
+                  type="text"
+                  value={ans ?? ''}
+                  readOnly
+                  onClick={() => inputRefs.current[i]?.focus()}
+                  onFocus={(e) => e.target.select()}
+                  style={{
+                    width: '28px',
+                    textAlign: 'center',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    padding: '2px 0',
+                    cursor: 'pointer',
+                    background: ans ? '#eef2ff' : '#fff',
+                    fontWeight: 'bold',
+                  }}
+                />
               </td>
             ))}
           </tr>

@@ -27,10 +27,13 @@ model Subject {
   id           Int          @id @default(autoincrement())
   examId       Int
   name         String       // 예: "언어논리"
+  booklet      String       // 예: "가", "나"
   passingScore Int
   exam         Exam         @relation(fields: [examId], references: [id])
   questions    Question[]
   testRecords  TestRecord[]
+
+  @@unique([examId, name, booklet])  // 동일 시험+과목+책형 중복 방지
 }
 
 model Question {
