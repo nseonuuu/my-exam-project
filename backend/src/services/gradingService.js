@@ -40,7 +40,7 @@ const gradeExam = async ({ userId, subjectId, userAnswers }) => {
 
   // 5. UserAnswer 일괄 저장
   await prisma.userAnswer.createMany({
-    data: gradedAnswers.map(a => ({
+    data: gradedAnswers.map((a) => ({
       recordId: record.id,
       questionId: a.questionId,
       userAnswer: a.userAnswer,
@@ -48,7 +48,7 @@ const gradeExam = async ({ userId, subjectId, userAnswers }) => {
     }))
   });
 
-  // 6. 저장된 UserAnswer를 다시 조회하여 answerId 포함
+  // 6. 저장된 UserAnswer를 다시 조회하여 answerId 확보
   const savedAnswers = await prisma.userAnswer.findMany({
     where: { recordId: record.id },
     orderBy: { question: { questionNumber: 'asc' } },
@@ -60,7 +60,7 @@ const gradeExam = async ({ userId, subjectId, userAnswers }) => {
     totalScore,
     correctCount,
     totalCount: questions.length,
-    details: savedAnswers.map(a => ({
+    details: savedAnswers.map((a) => ({
       answerId: a.id,
       questionId: a.questionId,
       userAnswer: a.userAnswer,

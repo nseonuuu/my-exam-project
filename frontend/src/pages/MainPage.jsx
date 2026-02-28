@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import useExamStore from '../store/useExamStore';
 import MultiTabBoard from '../features/exam/MultiTabBoard';
 import OmrSheet from '../features/exam/OmrSheet';
@@ -9,11 +8,10 @@ import { fetchExamList } from '../api/examApi';
 
 export default function MainPage() {
   const { activeExams, addTab, getCurrentExam } = useExamStore();
-  const navigate = useNavigate();
   const currentExam = getCurrentExam();
 
   // 서버에서 받아온 시험 목록
-  const [examList, setExamList] = useState([]);  // Exam[]
+  const [examList, setExamList] = useState([]);
 
   // 드롭다운 선택 상태
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -24,10 +22,10 @@ export default function MainPage() {
   // 문항별 상세 분석: 선택된 문항 인덱스 (null = 선택 안함)
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
 
-  // 탭 변경 시 선택된 문항 초기화
+  // 탭 변경 또는 채점 초기화 시 선택된 문항 초기화
   useEffect(() => {
     setSelectedQuestionIndex(null);
-  }, [currentExam?.tabId]);
+  }, [currentExam?.tabId, currentExam?.isGraded]);
 
   useEffect(() => {
     fetchExamList().then((res) => {
@@ -104,7 +102,7 @@ export default function MainPage() {
 
   // 모범답안 클릭 핸들러 (토글)
   const handleCorrectAnswerClick = (questionIndex) => {
-    setSelectedQuestionIndex((prev) => prev === questionIndex ? null : questionIndex);
+    setSelectedQuestionIndex((prev) => (prev === questionIndex ? null : questionIndex));
   };
 
   return (
@@ -166,9 +164,9 @@ export default function MainPage() {
             <ResultSummary passingScore={80} />
           </div>
 
-          {/* 문항별 상세 분석: 모범답안 클릭 시 해당 문항만 표시 */}
+          {/* 문항별 상세 분석: 모범답안 클릭 시에만 해당 문항 표시 */}
           {currentExam?.isGraded && selectedQuestionIndex !== null && (
-            <div style={{ padding: '12px' }}>
+            <div style={{ padding: '0 12px 12px' }}>
               <QuestionDetail selectedQuestionIndex={selectedQuestionIndex} />
             </div>
           )}
